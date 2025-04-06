@@ -149,7 +149,7 @@ def tips():
 
 
     budget_tips = suggestions.get_budget_tips(user_income, user_rent, user_food, user_spending, user_savings)
-    
+    print(budget_tips)
 
     return render_template("tips.html", budget_tips=budget_tips)
 
