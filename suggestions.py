@@ -1,23 +1,89 @@
+import re
 import google.generativeai as genai
 
-# Set API Key
 API_KEY = "AIzaSyABMAcLWBV178zPub_j5LgJ0Jb253OPIKw"
 genai.configure(api_key=API_KEY)
-
-# Initialize the correct model
 model = genai.GenerativeModel("gemini-2.0-flash")
 
-# Define a database of recommended spending by category (as percentages of income)
-category_recommendations = {
-    "Rent": 0.30,  # Recommended 30% for housing (rent)
-    "Food": 0.15,  # Recommended 15% for food
-    "Spending": 0.10,  # Recommended 10% for entertainment
-    "Savings": 0.20,  # Recommended 20% for savings
-}
+def clean_text(text):
+    """Removes all Markdown-style formatting, including asterisks for bold and italic."""
+    # Remove all Markdown-style bold and italic (i.e., ** or * wrapped content)
+    text = re.sub(r'\*\*(.*?)\*\*', r'\1', text)  # Remove **bold**
+    text = re.sub(r'\*(.*?)\*', r'\1', text)  # Remove *italic*
+
+    return text
+
+def format_budget_output(income, rent, food, spending, savings):
+    formatted_output = """
+    ### Tips
+    
+    #### Current Budget Analysis
+    Your current budget allocates resources as follows:
+    
+    - **Rent**:\t{}% of income
+    - **Food**:\t{}% of income
+    - **Spending**:\t{}% of income
+    - **Savings**:\t{}% of income
+    
+    Generally, a healthy budget aims for the following:
+    
+    - **Rent/Housing**:\t30% or less
+    - **Food**:\t15% or less
+    - **Spending (Discretionary)**:\t10-15%
+    - **Savings/Debt Repayment**:\t20% or more
+    
+    **Observations**:
+    - Your **rent** is significantly higher than the recommended guideline.
+    - Your **food** expenses are slightly above the ideal range.
+    - Your **spending** is within a reasonable range.
+    - While **saving** is a good habit, your savings percentage could be improved.
+    
+    #### Recommendations
+    Here are some specific suggestions to optimize each area of your budget:
+    
+    - **Rent**:
+      - **Explore alternative housing**: This is the most significant area for potential improvement. Consider moving to a more affordable apartment, finding a roommate, or exploring neighborhoods with lower rental costs.
+      - **Negotiate your rent**: Research comparable rental rates in your area and politely attempt to negotiate with your landlord. This is less likely to work, but it's worth a try.
+    
+    - **Food**:
+      - **Meal Planning**: Plan your meals for the week in advance to avoid impulse purchases and food waste.
+      - **Cook at Home**: Eating out is a major budget drain. Increase the frequency of cooking at home.
+      - **Grocery Shopping Strategically**: Use coupons, compare prices at different stores, buy in bulk when appropriate, and avoid shopping when hungry. Consider generic brands.
+      - **Reduce Food Waste**: Store food properly and use leftovers creatively.
+    
+    - **Spending**:
+      - **Track Your Spending**: For a month, meticulously track every dollar you spend. This will reveal where your money is actually going and identify areas where you can cut back. Use a budgeting app, spreadsheet, or notebook.
+      - **Identify Needs vs. Wants**: Distinguish between essential spending and discretionary spending. Prioritize needs and consciously reduce wants.
+      - **Implement a "30-Day Rule"**: Before making any non-essential purchase, wait 30 days. This helps you avoid impulse buys.
+      - **Find Free or Low-Cost Entertainment**: Explore free events in your community, utilize library resources, and pursue hobbies that don't require significant spending.
+    
+    - **Savings**:
+      - **Automate Savings**: Set up automatic transfers from your checking account to your savings account each month. This makes saving effortless.
+      - **Increase Savings Incrementally**: Even small increases in your savings rate can make a big difference over time. Aim to increase your savings by 1% each month until you reach your target.
+      - **Set Specific Savings Goals**: Having clear goals (e.g., emergency fund, down payment on a house) can motivate you to save more.
+    
+    #### Revised Budget Goal
+    Here's a possible revised budget breakdown based on the recommendations:
+    
+    - **Rent**:\t$1200 (30%) - Requires a housing change to be achievable
+    - **Food**:\t$600 (15%)
+    - **Spending**:\t$400 (10%)
+    - **Savings**:\t$800 (20%)
+    - **Remaining**:\t$100 (5%) - This can be allocated to unexpected expenses, debt repayment, or further increased savings.
+    
+    #### Key Takeaway
+    **Prioritize reducing your rent expense by exploring alternative housing options** to free up a substantial portion of your income for savings and other financial goals.
+    """.format(rent, food, spending, savings)
+
+    # Clean up the text (remove any stray Markdown, asterisks, etc.)
+    formatted_output = clean_text(formatted_output)
+
+    return formatted_output
+
 
 def get_budget_tips(income, rent, food, spending, savings):
     prompt = f"""
-    You are a personal finance assistant. Based on the user's financial data, provide clear, actionable budgeting advice.
+    You are a financial assistant. Based on the user's financial data, provide budgeting advice in a structured format.
 
     **User's Financial Data:**
     - Income: ${income}
@@ -26,58 +92,72 @@ def get_budget_tips(income, rent, food, spending, savings):
     - Spending: ${spending}
     - Savings: ${savings}
 
-    Use best financial practices (e.g., 50/30/20 rule) to give tailored recommendations. Consider the following:
-    - Rent should be around 30% of income
-    - Food should be around 15% of income
-    - Spending should be around 10% of income
-    - Savings should be around 20% of income
+    Structure the response with clear section headers:
     
-    Please analyze the user's spending habits and suggest areas they can improve. Be concise with the advice.
+    **Current Budget Analysis:**  
+    Explain how the user's budget compares to financial best practices.  
+
+    **Recommendations:**  
+    Provide specific, practical tips for optimizing rent, food, spending, and savings.  
+
+    **Revised Budget Goal:**  
+    Suggest an improved budget breakdown (Rent, Food, Spending, Savings).  
+
+    **Key Takeaway:**  
+    Summarize the most important action item in a single sentence.  
     """
 
     try:
+        # Generate response using the AI model
         response = model.generate_content(prompt)
-        return response.text if hasattr(response, "text") else "Unexpected response format."
-    
+
+        if hasattr(response, "text"):
+            response_text = response.text.strip()
+        elif hasattr(response, "candidates"):
+            response_text = response.candidates[0].content.strip()
+        else:
+            return {"error": "Unexpected response format from API."}
+
+        # Clean the generated response to remove * and ** completely
+        response_text = clean_text(response_text)
+
+        lines = response_text.split('\n')
+        tips_data = {
+            "income": income,
+            "rent": rent,
+            "food": food,
+            "spending": spending,
+            "savings": savings,
+            "analysis": "",
+            "recommendations": "",
+            "revised_budget": "",
+            "key_takeaway": ""
+        }
+
+        current_section = None
+        for line in lines:
+            line = line.strip()
+            if not line or line.startswith("*"):  # Remove bullet points
+                line = re.sub(r"^\*+", "", line).strip()
+
+            # Detect section headers
+            if "Current Budget Analysis" in line:
+                current_section = "analysis"
+                continue
+            elif "Recommendations" in line:
+                current_section = "recommendations"
+                continue
+            elif "Revised Budget Goal" in line:
+                current_section = "revised_budget"
+                continue
+            elif "Key Takeaway" in line:
+                current_section = "key_takeaway"
+                continue
+
+            if current_section:
+                tips_data[current_section] += line + " "
+
+        return tips_data
+
     except Exception as e:
-        return f"Error generating response: {e}"
-
-def analyze_spending(user_income, user_rent, user_food, user_spending, user_savings):
-    # Calculate recommended amounts based on the 50/30/20 rule
-    recommended_rent = user_income * category_recommendations["Rent"]
-    recommended_food = user_income * category_recommendations["Food"]
-    recommended_spending = user_income * category_recommendations["Spending"]
-    recommended_savings = user_income * category_recommendations["Savings"]
-
-    # Calculate overspending or underspending in each category
-    rent_analysis = "good" if user_rent <= recommended_rent else "too high"
-    food_analysis = "good" if user_food <= recommended_food else "too high"
-    spending_analysis = "good" if user_spending <= recommended_spending else "too high"
-    savings_analysis = "good" if user_savings >= recommended_savings else "too low"
-
-    return {
-        "Rent": rent_analysis,
-        "Food": food_analysis,
-        "Spending": spending_analysis,
-        "Savings": savings_analysis,
-    }
-
-# Example usage
-if __name__ == "__main__":
-    user_income = 4000
-    user_rent = 1600
-    user_food = 700
-    user_spending = 450
-    user_savings = 500
-
-    # Get spending analysis
-    spending_analysis = analyze_spending(user_income, user_rent, user_food, user_spending, user_savings)
-
-    print("Spending Analysis:")
-    for category, analysis in spending_analysis.items():
-        print(f"- {category}: {analysis}")
-
-    # Get budgeting tips from Gemini model
-    budget_tips = get_budget_tips(user_income, user_rent, user_food, user_spending, user_savings)
-    print("\nBudgeting Tips:")
-    print(budget_tips)
+        return {"error": f"Error generating response: {e}"}

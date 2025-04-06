@@ -8,6 +8,7 @@ import numpy as np
 import graph
 from calendar import monthrange
 from http import HTTPStatus
+from suggestions import get_budget_tips
 
 # Temporary structure for events
 Event = namedtuple('Event', ['date', 'amount', 'description', 'type'])
@@ -142,7 +143,18 @@ def calendar():
 @app.route("/tips/")
 @login_required
 def tips():
-    return render_template("tips.html")
+    user_income = 4000
+    user_rent = 1600
+    user_food = 700
+    user_spending = 450
+    user_savings = 500
+
+    # Get budgeting tips from the suggestions module
+    budget_tips = get_budget_tips(user_income, user_rent, user_food, user_spending, user_savings)
+
+    return render_template("tips.html", tips=budget_tips)
+
+
 
 wishlist_items = []  # in-memory list for now
 
