@@ -1,112 +1,139 @@
-import plotly.graph_objs as go
-import numpy as np
+import unittest
+from unittest.mock import patch
+from datetime import datetime
 
-def main():
-    pass
+# Assuming the relevant functions and imports from your original code are already available
+from your_module import generate_graphs, pastel_gradient
 
-def pastel_gradient(n, base_color, alpha_start=0.5, alpha_end=0.9, darken_factor=0.2):
-    alphas = np.linspace(alpha_start, alpha_end, n)  # Smooth gradient
-    shades = []
-    for i, alpha in enumerate(alphas):
-        darkened_color = tuple(max(0, c - (i * darken_factor / n)) for c in base_color)
-        shades.append('rgba({}, {}, {}, {})'.format(*(int(c * 255) for c in darkened_color), alpha))
-    return shades
 
-def generate_graphs(transaction_list):
-    total_spent = 0.0
-    category_dict = {}
-    subcategories = []
-    num_main_categories = 0
-    num_subcategories = 0
+class TestGenerateGraphs(unittest.TestCase):
+
+    @patch('your_module.db.get_category_name_by_id')
+    def test_generate_graphs(self, mock_get_category_name_by_id):
+        # Sample data for testing
+        transaction_list = [
+            {
+                'created_at': '2025-04-10',
+                'category_id': 1,
+                'expense': True,
+                'amount': 100.0,
+                'title': 'Groceries',
+                'user_id': 'user1'
+            },
+            {
+                'created_at': '2025-04-15',
+                'category_id': 2,
+                'expense': True,
+                'amount': 50.0,
+                'title': 'Entertainment',
+                'user_id': 'user1'
+            },
+            {
+                'created_at': '2025-04-25',
+                'category_id': 1,
+                'expense': False,
+                'amount': 200.0,
+                'title': 'Salary',
+                'user_id': 'user1'
+            }
+        ]
+        base_budget = 500.0
+
+        # Mocking database function call
+        mock_get_category_name_by_id.return_value = "Groceries" if '1' in str(mock_get_category_name_by_id.call_args[0]) else "Entertainment"
+
+        # Call the function with the sample data
+        pie_html, bar_html = generate_graphs(transaction_list, base_budget)
+
+        # Test: Ensure that pie and bar charts are generated correctly
+        self.assertIn("<div id=\"", pie_html)  # Check if the pie chart HTML has been generated
+        self.assertIn("<div id=\"", bar_html)  # Check if the bar chart HTML has been generated
+
+        # Test: Check if the mock data for category names are being used
+        mock_get_category_name_by_id.assert_called()
+
+        # Additional assertions can be done to check correct data in the charts
+        # For example, testing for specific labels or values in the HTML (e.g., checking total income, total spent, etc.)
+        self.assertIn("Spending Breakdown", pie_html)
+        self.assertIn("Budget vs. Actual Spending", bar_html)
     
-    # Initialize category dictionary
-    for transaction in transaction_list:
-        category_id = str(transaction['category_id'])
+    def test_pastel_gradient(self):
+        # Test pastel_gradient function for correct output format
+        n = 5
+        base_color = (0.87, 0.73, 0.66)
+        gradient_colors = pastel_gradient(n, base_color)
 
-        try:
-            category_dict[category_id].append(transaction)
-        except KeyError:
-            category_dict[category_id] = [transaction]
-            num_main_categories += 1
+        # Check that the gradient has the correct number of colors
+        self.assertEqual(len(gradient_colors), n)
 
-        if transaction['title'] not in subcategories:
-            subcategories.append(transaction['title'])
-            num_subcategories += 1
+        # Check that each color is in RGBA format
+        for color in gradient_colors:
+            self.assertTrue(color.startswith("rgba(") and color.endswith(")"))
 
-        value = float(transaction['value'])
-        if(bool(transaction['expense'])):
-            total_spent += value
-        else:
-            total_spent -= value
+    def test_generate_graphs_empty(self):
+        # Test with empty transaction list
+        empty_transaction_list = []
+        base_budget = 500.0
 
-            
-        # Define total budget
-    total_budget = 5000.00
-    remaining = total_budget - total_spent  # Money left or over budget
+        pie_html, bar_html = generate_graphs(empty_transaction_list, base_budget)
 
+        # Check that the pie and bar charts are still generated
+        self.assertIn("<div id=\"", pie_html)
+        self.assertIn("<div id=\"", bar_html)
 
-    # Define base colors
-    base_color_outer = (0.87, 0.73, 0.66)  # Pastel brown (#debaa9) - starts light
-    base_color_inner = (0.74, 0.86, 0.81)  # Deep pastel green
+        # Ensure that values reflect the empty transaction list
+        self.assertIn('Budget vs. Actual Spending', bar_html)
+        self.assertIn('Spending Breakdown', pie_html)
 
-    # Generate gradients
-    outer_colors = pastel_gradient(num_main_categories, base_color_outer, alpha_start=0.5, alpha_end=0.85, darken_factor=0.3)  # Darker brown shades
-    inner_colors = pastel_gradient(num_subcategories, base_color_inner, alpha_start=0.5, alpha_end=0.875,darken_factor=0.3)  # Green gradient
-    
-    main_category_values = []
-    for category_id in category_dict.keys():
-        local_expense = 0.0
-        for transaction in category_dict[category_id]:
-            if(bool(transaction['expense'])):
-                local_expense += transaction['value']
-            else:
-                local_expense -= transaction['value']
-        main_category_values.append(local_expense)
+    def test_generate_graphs_no_expenses(self):
+        # Test when no expenses exist in the transaction list
+        transaction_list = [
+            {
+                'created_at': '2025-04-10',
+                'category_id': 1,
+                'expense': False,
+                'amount': 100.0,
+                'title': 'Salary',
+                'user_id': 'user1'
+            },
+            {
+                'created_at': '2025-04-15',
+                'category_id': 2,
+                'expense': False,
+                'amount': 200.0,
+                'title': 'Salary',
+                'user_id': 'user1'
+            }
+        ]
+        base_budget = 500.0
 
-    subcategory_values = []
-    for title in subcategories:
-        subcategory_values.append(sum(float(transaction['value']) for transaction in transaction_list if transaction['title'] == title))
-    # Create pie chart for spending breakdown
+        pie_html, bar_html = generate_graphs(transaction_list, base_budget)
 
-    print(list(category_dict.keys()))
-    print(subcategories)
-    print()
-    print(main_category_values)
-    print(subcategory_values)
-    # exit()
+        # Check that the pie and bar charts are still generated
+        self.assertIn("<div id=\"", pie_html)
+        self.assertIn("<div id=\"", bar_html)
 
-    # May need to rework the alignment on the two graphs
-    fig_pie = go.Figure()
-    fig_pie.add_trace(go.Pie(labels=list(category_dict.keys()), values=main_category_values, hole=0.2, name="Main Categories", marker=dict(colors=outer_colors),
-                             textinfo='label+percent', hoverinfo='label+value+percent', textposition='outside'))
-    fig_pie.add_trace(go.Pie(labels=subcategories, values=subcategory_values, hole=0.6, name="Sub-categories", marker=dict(colors=inner_colors),
-                             textinfo='label+percent', hoverinfo='label+value+percent', textposition='inside', insidetextorientation='horizontal'))
+        # Check that the total spent is 0 in the bar chart
+        self.assertIn('0.00', bar_html)
 
-    fig_pie.update_layout(
-        title_text="Spending Breakdown",
-        font=dict(
-            family="Noto Sans, serif",  # Change to your preferred font
-            size=14,  # Change to your preferred font size
-            color="#8b4900"  # Change to your preferred font color
-        )
-    )
+    def test_generate_graphs_extra_income(self):
+        # Test when income exceeds the base budget
+        transaction_list = [
+            {
+                'created_at': '2025-04-10',
+                'category_id': 1,
+                'expense': False,
+                'amount': 600.0,
+                'title': 'Salary',
+                'user_id': 'user1'
+            }
+        ]
+        base_budget = 500.0
 
-    fig_pie.show()
+        pie_html, bar_html = generate_graphs(transaction_list, base_budget)
 
-    print(category_dict)
-    print(total_spent) 
+        # Check if the effective budget is set to total income
+        self.assertIn('600.00', bar_html)  # Effective Budget will be equal to total income
 
-
-
-    print(num_main_categories)
-    print(num_subcategories)
-
-if __name__ == "__main__":
-    event1 = {'category_id':1, 'expense':1, 'value':13, 'title':"subcategory1"}
-    event2 = {'category_id':1, 'expense':0, 'value':3, 'title':"subcategory2"}
-    event3 = {'category_id':2, 'expense':1, 'value':17, 'title':"subcategory3"}
-    event4 = {'category_id':3, 'expense':1, 'value':3, 'title':"subcategory4"}
-
-
-    mylist = [event1, event2, event3, event4]
-    generate_graphs(mylist)
+if __name__ == '__main__':
+    unittest.main()
