@@ -44,10 +44,10 @@ def get_budget_tips(income, rent, food, spending, savings):
 
 def analyze_spending(user_income, user_rent, user_food, user_spending, user_savings):
     # Calculate recommended amounts based on the 50/30/20 rule
-    recommended_rent = user_income * category_recommendations["Rent"]
-    recommended_food = user_income * category_recommendations["Food"]
-    recommended_spending = user_income * category_recommendations["Spending"]
-    recommended_savings = user_income * category_recommendations["Savings"]
+    recommended_rent = user_income * category_recommendations["rent"]
+    recommended_food = user_income * category_recommendations["food"]
+    recommended_spending = user_income * category_recommendations["spending"]
+    recommended_savings = user_income * category_recommendations["savings"]
 
     # Calculate overspending or underspending in each category
     rent_analysis = "good" if user_rent <= recommended_rent else "too high"
@@ -56,10 +56,10 @@ def analyze_spending(user_income, user_rent, user_food, user_spending, user_savi
     savings_analysis = "good" if user_savings >= recommended_savings else "too low"
 
     return {
-        "Rent": rent_analysis,
-        "Food": food_analysis,
-        "Spending": spending_analysis,
-        "Savings": savings_analysis,
+        "rent": rent_analysis,
+        "food": food_analysis,
+        "spending": spending_analysis,
+        "savings": savings_analysis,
     }
 
 # Example usage
