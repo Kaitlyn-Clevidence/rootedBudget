@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: rootedbudget
+    env: docker
+    plan: free
+    dockerContext: .
+    dockerfilePath: ./Dockerfile
+    autoDeploy: true
+    envVars:
+      - key: FLASK_ENV
+        value: production
