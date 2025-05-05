@@ -3,6 +3,7 @@ import my_auth
 import db_interface
 import db
 import suggestions
+import os
 import markdown
 
 #from werkzeug.security import check_password_hash, generate_password_hash
@@ -15,7 +16,7 @@ from calendar import monthrange
 #from http import HTTPStatus
 
 app = Flask(__name__)
-app.secret_key = 'supersecretkey'
+app.secret_key = os.environ.get("SECRET_KEY", "supersecretkey")  # Replace "dev" with something more secure in prod
 
 @app.route("/")
 def landing():
