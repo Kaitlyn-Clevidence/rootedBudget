@@ -150,7 +150,7 @@ def tips():
         user_income = -1 * sum_expenses('paycheck')
     else:
         user_income = 0  # Default to 0 if 'paycheck' is not found
-        user_rent = sum_expenses('rent')
+    user_rent = sum_expenses('rent')
     user_food = sum_expenses('groceries')
     user_spending = sum_expenses('spending')
     user_savings = sum_expenses('savings')
