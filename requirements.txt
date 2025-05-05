@@ -5,3 +5,4 @@ numpy
 markdown
 beautifulsoup4
 flake8
+coverage
