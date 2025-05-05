@@ -68,3 +68,11 @@ jobs:
     - name: Push Docker image
       run: |
         docker push ${{ secrets.DOCKER_USERNAME }}/rootedbudget
+        
+    - name: Pull Docker image
+      run: |
+        docker pull ${{ secrets.DOCKER_USERNAME }}/rootedbudget
+
+    - name: Run Locally at http://localhost:5000
+        docker run -p 5000:5000 ${{ secrets.DOCKER_USERNAME }}/rootedbudget
+
