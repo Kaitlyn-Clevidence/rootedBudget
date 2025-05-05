@@ -3,10 +3,12 @@ services:
     name: rootedbudget
     env: docker
     plan: free
-    dockerContext: .
-    dockerfilePath: ./Dockerfile
+    dockerContext: . # Path to your Docker context
+    dockerfilePath: ./Dockerfile # Path to your Dockerfile
     autoDeploy: true
     envVars:
       - key: FLASK_ENV
         value: production
-    startCommand: "python3 flaskApp.py"  # Start Flask app after successful deployment
+    startCommand: "python3 flaskApp.py"  # Command to start your app
+    ports:
+      - "5000:5000"  # Ensure the port mapping is correct
