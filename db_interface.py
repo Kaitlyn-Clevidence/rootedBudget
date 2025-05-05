@@ -1,6 +1,5 @@
 import db
 from werkzeug.security import generate_password_hash, check_password_hash
-import datetime
 import my_auth
 from datetime import datetime
 
@@ -115,7 +114,7 @@ if __name__ == "__main__":
         recurring_flag:bool = input("recurring?").lower() == "y"
         expense_flag:bool = input("expense?").lower() == "y"
         date_str = input("date")
-        date_str = "2025-03-15"
+        #date_str = "2025-03-15"
 
         if(add_transaction(user['id'], title, description, category_name, amount, recurring_flag, expense_flag, date_str)):
             print("transaction added successfully")

@@ -1,4 +1,5 @@
 import sqlite3
+from flask import g
 
 DATABASE_PATH = "database.db"
 
@@ -45,14 +46,18 @@ def init_tables():
     con.close()
 
 def get_db_connection():
-    conn = sqlite3.connect(DATABASE_PATH)
-    conn.row_factory = sqlite3.Row
-    return conn
+    if "db" not in g:
+        print("[DEBUG] Opening new DB connection")
+        g.db = sqlite3.connect(DATABASE_PATH)
+        g.db.row_factory = sqlite3.Row
+    return g.db
 
 # Reusable function to close connections after query execution
-def close_connection(conn):
-    conn.commit()
-    conn.close()
+def close_connection():
+    db = g.pop("db", None)
+    if db is not None:
+        print("[DEBUG] Closing DB connection")
+        db.close()
 
 def db_create_user(username: str, email: str, hashed_password: str):
     conn = get_db_connection()

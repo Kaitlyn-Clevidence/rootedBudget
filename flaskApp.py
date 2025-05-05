@@ -290,5 +290,9 @@ def add_event():
     
     return redirect(url_for('personalView'))
 
+@app.teardown_appcontext
+def teardown_db(exception):
+    db.close_connection()
+
 if __name__ == "__main__":
     app.run(debug = True)
