@@ -9,3 +9,4 @@ services:
     envVars:
       - key: FLASK_ENV
         value: production
+    startCommand: "python3 flaskApp.py"  # Start Flask app after successful deployment
