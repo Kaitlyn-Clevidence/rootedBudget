@@ -6,24 +6,3 @@ X my_auth.py                  33      2    94%   28-29
 X suggestions.py              24      0   100%
 
 avg: 69%
-
-
-    - name: Trigger Render Deployment
-      run: |
-        curl -X POST https://api.render.com/v1/services/YOUR_SERVICE_ID/deploys \
-        -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-        -H "Content-Type: application/json" \
-        -d '{"branch":"main"}'
-
-  deploy:
-    name: Deploy to Render
-    runs-on: ubuntu-latest
-    needs: build  # This job will run only after the Docker image is pushed successfully
-
-    steps:
-    - name: Trigger Render deployment (Post build)
-      run: |
-        curl -X POST https://api.render.com/v1/services/YOUR_SERVICE_ID/deploys \
-        -H "Authorization: Bearer ${{ secrets.RENDER_API_KEY }}" \
-        -H "Content-Type: application/json" \
-        -d '{"branch":"main"}'
