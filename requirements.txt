@@ -4,3 +4,4 @@ plotly
 numpy
 markdown
 beautifulsoup4
+flake8
