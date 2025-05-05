@@ -1,13 +1,14 @@
 import unittest
 from unittest.mock import patch
-from your_module import analyze_spending, get_budget_tips  # replace with your actual module name
+from suggestions import analyze_spending, get_budget_tips  # replace with your actual module name
 
-category_recommendations = {
-    "Rent": 0.30,
-    "Food": 0.15,
-    "Spending": 0.10,
-    "Savings": 0.20,
-}
+
+#category_recommendations = {
+#    "rent": 0.30,
+#    "food": 0.15,
+#    "spending": 0.10,
+#    "savings": 0.20,
+#}
 
 class TestBudgetingFunctions(unittest.TestCase):
     def test_analyze_spending_good_budget(self):
@@ -17,10 +18,10 @@ class TestBudgetingFunctions(unittest.TestCase):
         user_spending = 400
         user_savings = 800
         expected = {
-            "Rent": "good",
-            "Food": "good",
-            "Spending": "good",
-            "Savings": "good",
+            "rent": "good",
+            "food": "good",
+            "spending": "good",
+            "savings": "good",
         }
         result = analyze_spending(user_income, user_rent, user_food, user_spending, user_savings)
         self.assertEqual(result, expected)
@@ -32,10 +33,10 @@ class TestBudgetingFunctions(unittest.TestCase):
         user_spending = 400
         user_savings = 800
         expected = {
-            "Rent": "too high",
-            "Food": "good",
-            "Spending": "good",
-            "Savings": "good",
+            "rent": "too high",
+            "food": "good",
+            "spending": "good",
+            "savings": "good",
         }
         result = analyze_spending(user_income, user_rent, user_food, user_spending, user_savings)
         self.assertEqual(result, expected)
@@ -47,15 +48,15 @@ class TestBudgetingFunctions(unittest.TestCase):
         user_spending = 400
         user_savings = 300
         expected = {
-            "Rent": "good",
-            "Food": "good",
-            "Spending": "good",
-            "Savings": "too low",
+            "rent": "good",
+            "food": "good",
+            "spending": "good",
+            "savings": "too low",
         }
         result = analyze_spending(user_income, user_rent, user_food, user_spending, user_savings)
         self.assertEqual(result, expected)
 
-    @patch('your_module.genai.GenerativeModel.generate_content')
+    @patch('suggestions.genai.GenerativeModel.generate_content')
     def test_get_budget_tips(self, mock_generate_content):
         mock_generate_content.return_value = type('obj', (object,), {'text': "You should save more and reduce your entertainment spending."}) 
         user_income = 4000
@@ -67,7 +68,7 @@ class TestBudgetingFunctions(unittest.TestCase):
         result = get_budget_tips(user_income, user_rent, user_food, user_spending, user_savings)
         self.assertEqual(result, expected_output)
 
-    @patch('your_module.genai.GenerativeModel.generate_content')
+    @patch('suggestions.genai.GenerativeModel.generate_content')
     def test_get_budget_tips_with_error(self, mock_generate_content):
         mock_generate_content.side_effect = Exception("API call failed")
         user_income = 4000
@@ -78,6 +79,27 @@ class TestBudgetingFunctions(unittest.TestCase):
         expected_output = "Error generating response: API call failed"
         result = get_budget_tips(user_income, user_rent, user_food, user_spending, user_savings)        
         self.assertEqual(result, expected_output)
+
+    def test_analyze_spending_exact_thresholds(self):
+        user_income = 4000
+        user_rent = 0.30 * user_income
+        user_food = 0.15 * user_income
+        user_spending = 0.10 * user_income
+        user_savings = 0.20 * user_income
+        expected = {
+            "rent": "good",
+            "food": "good",
+            "spending": "good",
+            "savings": "good",
+        }
+        result = analyze_spending(user_income, user_rent, user_food, user_spending, user_savings)
+        self.assertEqual(result, expected)
+
+    @patch('suggestions.genai.GenerativeModel.generate_content')
+    def test_get_budget_tips_ideal_scenario(self, mock_generate_content):
+        mock_generate_content.return_value = type('obj', (object,), {'text': "Your budgeting looks great!"})
+        result = get_budget_tips(4000, 1200, 600, 400, 800)
+        self.assertEqual(result, "Your budgeting looks great!")
 
 if __name__ == '__main__':
     unittest.main()

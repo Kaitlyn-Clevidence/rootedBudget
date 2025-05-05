@@ -5,14 +5,14 @@ import db
 import suggestions
 import markdown
 
-from werkzeug.security import check_password_hash, generate_password_hash
-from functools import wraps
+#from werkzeug.security import check_password_hash, generate_password_hash
+#from functools import wraps
 from datetime import datetime, timedelta
 from collections import namedtuple
-import numpy as np
+#import numpy as np
 import graph
 from calendar import monthrange
-from http import HTTPStatus
+#from http import HTTPStatus
 
 app = Flask(__name__)
 app.secret_key = 'supersecretkey'
@@ -118,7 +118,8 @@ def tips():
             subcategories.append(transaction['title'])
 
         for category_id in category_dict.keys():
-            category_name = db.get_category_name_by_id(transaction['user_id'], category_id)
+            user_id = session.get('user_id')
+            category_name = db.get_category_name_by_id(user_id, category_id)
             translation_dict[category_name] = category_id
 
     print(translation_dict)
@@ -130,6 +131,9 @@ def tips():
     
 
     def sum_expenses(category_name):
+        if category_name not in translation_dict:
+            return 0.0  # Handle missing category gracefully
+        
         expenses_transactions = category_dict[translation_dict[category_name]]
         expenses = 0.0
         for x in expenses_transactions:
@@ -141,8 +145,11 @@ def tips():
                 expenses -= value
         return expenses
     
-    user_income = -1 * sum_expenses('paycheck')
-    user_rent = sum_expenses('rent')
+    if 'paycheck' in translation_dict:
+        user_income = -1 * sum_expenses('paycheck')
+    else:
+        user_income = 0  # Default to 0 if 'paycheck' is not found
+        user_rent = sum_expenses('rent')
     user_food = sum_expenses('groceries')
     user_spending = sum_expenses('spending')
     user_savings = sum_expenses('savings')
@@ -195,7 +202,9 @@ def add_event():
     description = request.form.get("description").lower()
     amount = float(request.form.get("amount"))
     category = request.form.get("category").lower()
-    new_category = request.form.get("newCategory").lower()
+    new_category = request.form.get("newCategory")
+    if new_category:
+        new_category = new_category.lower()
 
     final_category = None
     user_id = session['user_id']

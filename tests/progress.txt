@@ -1,0 +1,31 @@
+X - authentication - 94% coverage 
+db - check about overlapping coverage with authentication
+    missing lines:
+    47-49:
+    52-56:
+    73-83:
+    86-89:
+    92-96:
+    99-104:
+    108-111:
+    114-117:
+    120-123:
+    126-129:
+    132-137:
+    140-147:
+    150: calls init tables, tested earlier 
+
+flaskapp
+graph
+db_int
+X - suggestions - 100% coverage 
+mark integrations
+
+P db.py                                                                                        78     53    36%   47-49, 52-56, 73-83, 86-89, 92-96, 99-104, 108-111, 114-117, 120-123, 126-129, 132-137, 140-147, 150
+N db_interface.py                                                                              90     52    42%   8-22, 50-52, 75-76, 81-125
+N flaskApp.py                                                                                 198    160    51%   22-24, 28-41, 45-56, 63-80, 92, 96-154, 158-168, 172-175, 179-187, 191-282, 285
+N graph.py                                                                                     60     54    10%   8-14, 17-133
+X my_auth.py                                                                                   33      2    94%   28-29
+X suggestions.py                                                                               24      0   100%
+
+avg: 49.5%

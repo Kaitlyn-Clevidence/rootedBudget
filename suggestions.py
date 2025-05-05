@@ -4,16 +4,14 @@ import google.generativeai as genai
 API_KEY = "AIzaSyABMAcLWBV178zPub_j5LgJ0Jb253OPIKw"
 genai.configure(api_key=API_KEY)
 
+category_recommendations = {
+    "rent": 0.30,  # Recommended 30% for housing (rent)
+    "food": 0.15,  # Recommended 15% for food
+    "spending": 0.10,  # Recommended 10% for entertainment
+    "savings": 0.20,  # Recommended 20% for savings
+}
 # Initialize the correct model
 model = genai.GenerativeModel("gemini-2.0-flash")
-
-# Define a database of recommended spending by category (as percentages of income)
-category_recommendations = {
-    "Rent": 0.30,  # Recommended 30% for housing (rent)
-    "Food": 0.15,  # Recommended 15% for food
-    "Spending": 0.10,  # Recommended 10% for entertainment
-    "Savings": 0.20,  # Recommended 20% for savings
-}
 
 def get_budget_tips(income, rent, food, spending, savings):
     prompt = f"""
@@ -42,14 +40,20 @@ def get_budget_tips(income, rent, food, spending, savings):
     except Exception as e:
         return f"Error generating response: {e}"
 
-def analyze_spending(user_income, user_rent, user_food, user_spending, user_savings):
-    # Calculate recommended amounts based on the 50/30/20 rule
-    recommended_rent = user_income * category_recommendations["rent"]
-    recommended_food = user_income * category_recommendations["food"]
-    recommended_spending = user_income * category_recommendations["spending"]
-    recommended_savings = user_income * category_recommendations["savings"]
+def analyze_spending(user_income, user_rent, user_food, user_spending, user_savings, recommendations=None):
+    if recommendations is None:
+        recommendations = {
+            "rent": 0.30,
+            "food": 0.15,
+            "spending": 0.10,
+            "savings": 0.20,
+        }
 
-    # Calculate overspending or underspending in each category
+    recommended_rent = user_income * recommendations["rent"]
+    recommended_food = user_income * recommendations["food"]
+    recommended_spending = user_income * recommendations["spending"]
+    recommended_savings = user_income * recommendations["savings"]
+
     rent_analysis = "good" if user_rent <= recommended_rent else "too high"
     food_analysis = "good" if user_food <= recommended_food else "too high"
     spending_analysis = "good" if user_spending <= recommended_spending else "too high"
@@ -63,21 +67,21 @@ def analyze_spending(user_income, user_rent, user_food, user_spending, user_savi
     }
 
 # Example usage
-if __name__ == "__main__":
-    user_income = 4000
-    user_rent = 1600
-    user_food = 700
-    user_spending = 450
-    user_savings = 500
+#if __name__ == "__main__":
+#    user_income = 4000
+#    user_rent = 1600
+#    user_food = 700
+#    user_spending = 450
+#    user_savings = 500
 
     # Get spending analysis
-    spending_analysis = analyze_spending(user_income, user_rent, user_food, user_spending, user_savings)
-
-    print("Spending Analysis:")
-    for category, analysis in spending_analysis.items():
-        print(f"- {category}: {analysis}")
+#    spending_analysis = analyze_spending(user_income, user_rent, user_food, user_spending, user_savings)
+#
+#    print("Spending Analysis:")
+#    for category, analysis in spending_analysis.items():
+#        print(f"- {category}: {analysis}")
 
     # Get budgeting tips from Gemini model
-    budget_tips = get_budget_tips(user_income, user_rent, user_food, user_spending, user_savings)
-    print("\nBudgeting Tips:")
-    print(budget_tips)
+#    budget_tips = get_budget_tips(user_income, user_rent, user_food, user_spending, user_savings)
+#    print("\nBudgeting Tips:")
+#    print(budget_tips)

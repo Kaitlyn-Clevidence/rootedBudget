@@ -1,8 +1,6 @@
 import sqlite3
 
-
 DATABASE_PATH = "database.db"
-
 
 def init_tables():
     con = sqlite3.connect(DATABASE_PATH)
@@ -12,24 +10,24 @@ def init_tables():
         ID INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL UNIQUE,
         email TEXT NOT NULL UNIQUE,
-        password_hash TEXT NOT NULL,
+        password_hash TEXT NOT NULL,  -- Fixed typo
         created_at TEXT DEFAULT (DATETIME('now')),
         last_login TEXT,
         budget FLOAT DEFAULT 0.0
     );"""
 
     create_transactions_table = """CREATE TABLE IF NOT EXISTS transactions (
-        ID INTEGER PRIMARY KEY AUTOINCREMENT,  -- Auto-incrementing transaction ID
+        ID INTEGER PRIMARY KEY AUTOINCREMENT,
         title TEXT NOT NULL,
         description TEXT,
-        category_id INTEGER NOT NULL,          -- Foreign key to `categories` table
-        amount REAL NOT NULL,                  -- Transaction amount (can be positive or negative)
-        recurring BOOLEAN DEFAULT 0,           -- Whether the transaction is recurring (1 = True, 0 = False)
-        created_at TEXT DEFAULT (DATETIME('now')), -- Date and time of the transaction
-        user_id INTEGER NOT NULL,              -- Foreign key to `users` table
-        expense BOOLEAN NOT NULL,                 -- Transaction type (0 = Expense, 1 = Income)
-        FOREIGN KEY(category_id) REFERENCES categories(ID), -- Ensures a valid category reference
-        FOREIGN KEY(user_id) REFERENCES users(ID) -- Ensures a valid user reference
+        category_id INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        recurring BOOLEAN DEFAULT 0,
+        created_at TEXT DEFAULT (DATETIME('now')),
+        user_id INTEGER NOT NULL,
+        expense BOOLEAN NOT NULL,
+        FOREIGN KEY(category_id) REFERENCES categories(ID),
+        FOREIGN KEY(user_id) REFERENCES users(ID)
     );"""
 
     create_categories_table = """CREATE TABLE IF NOT EXISTS categories (
@@ -37,138 +35,89 @@ def init_tables():
         name TEXT NOT NULL,
         user_id INTEGER NOT NULL,
         FOREIGN KEY(user_id) REFERENCES users(ID),
-        UNIQUE(user_id, name)  -- ✅ Each user can have a category with the same name
+        UNIQUE(user_id, name)
     );"""
-
 
     cur.execute(create_users_table)
     cur.execute(create_transactions_table)
     cur.execute(create_categories_table)
+    con.commit()  # Commit changes after creating the tables
     con.close()
 
-def init_test_data():
-    db_create_user('user', 'user@email.com', 'myhash')
-    user1 = get_user('user')
-
-    create_category(user1, "Food")
-    create_category(user1, "Entertainment")
-
-    create_transaction(user1, 'McDonalds', 'minecraft meal', 1, 12.12, False, True)
-    create_transaction(user1, 'Bluey plushie', 'i really want it', 2, 19.99, True, False)
-    
-
-    db_create_user('user2', 'user2@email.com', 'secondlyhashedpassword')
-    user2 = get_user('user2')
-    create_transaction(user2, 'waltuh', 'help me', 1, 123.45, False, False)
-
-    db_create_user('user3', 'user3@email.com', 'hash3')
-    user3 = get_user('user3')
-
-
 def get_db_connection():
-    conn = sqlite3.connect(DATABASE_PATH)  # Connect to SQLite database file
-    conn.row_factory = sqlite3.Row  # To return rows as dictionaries
+    conn = sqlite3.connect(DATABASE_PATH)
+    conn.row_factory = sqlite3.Row
     return conn
 
-def print_schema():
-    new_con = sqlite3.connect(DATABASE_PATH)
-    new_cur = new_con.cursor()
-
-    print(new_cur.execute("SELECT * FROM users").fetchall())
-    return
-
-    res = new_cur.execute("PRAGMA table_info([users]);")
-    print(res.fetchall())
-    print('-'*100)
-
-    res = new_cur.execute("PRAGMA table_info([transactions]);")
-    print(res.fetchall())
-    print('-'*100)
-
-    res = new_cur.execute("PRAGMA table_info([categories]);")
-    print(res.fetchall())
-    print('-'*100)
-
-    new_con.close()
+# Reusable function to close connections after query execution
+def close_connection(conn):
+    conn.commit()
+    conn.close()
 
 def db_create_user(username: str, email: str, hashed_password: str):
     conn = get_db_connection()
     cur = conn.cursor()
+    try:
+        cur.execute("INSERT INTO users (username, email, password_hash) VALUES(?,?,?)", (username, email, hashed_password))
+    except sqlite3.IntegrityError as e:
+        print("Error: ", e)  # Handle integrity errors (like unique constraint violation)
+    close_connection(conn)
 
-    res = cur.execute("INSERT INTO users (username, email, password_hash) VALUES(?,?,?)", (username,email,hashed_password))    
-
-    # sqlite3.IntegrityError: UNIQUE constraint failed: users.email
-
-    conn.commit()
-    conn.close()
-
-    return res
-
-
-def get_user(identifier:str):
+def get_user(identifier: str):
     conn = get_db_connection()
-    user = conn.execute('SELECT * FROM users WHERE username = ? OR email = ? OR ID = ?', (identifier,identifier,identifier)).fetchone()
-    conn.close()
+    user = conn.execute('SELECT * FROM users WHERE username = ? OR email = ? OR ID = ?', (identifier, identifier, identifier)).fetchone()
+    close_connection(conn)
     return user
 
-def create_transaction(user_id, title:str, description:str, category_id:int, amount:float, recurring:bool, expense:bool, input_date):
+def create_transaction(user_id, title: str, description: str, category_id: int, amount: float, recurring: bool, expense: bool, input_date):
     title = title.lower()
     conn = get_db_connection()
-    conn.execute("INSERT INTO transactions(title, description, category_id, amount, recurring, user_id, expense, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", (title, description, category_id, amount, recurring, user_id, expense, input_date))
-    conn.commit()
-    conn.close()
+    conn.execute("INSERT INTO transactions(title, description, category_id, amount, recurring, user_id, expense, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)", 
+                 (title, description, category_id, amount, recurring, user_id, expense, input_date))
+    close_connection(conn)
 
-def create_category(user_id, category_name:str):
+def create_category(user_id, category_name: str):
     category_name = category_name.lower()
     conn = get_db_connection()
     conn.execute("INSERT INTO categories(name, user_id) VALUES (?, ?)", (category_name, user_id))
-    conn.commit()
-    conn.close()
+    close_connection(conn)
     return True
 
-# Given a user, returns all transactions of a user
 def get_transactions_of_user(user_id):
     conn = get_db_connection()
-    transactions = conn.execute("SELECT * FROM transactions t JOIN users u ON t.user_id = u.id WHERE u.id = ?", (user_id,))
-    # conn.close()
-    return transactions.fetchall()
+    transactions = conn.execute("SELECT * FROM transactions t JOIN users u ON t.user_id = u.id WHERE u.id = ?", (user_id,)).fetchall()
+    close_connection(conn)
+    return transactions
 
 def get_categories_of_user(user_id):
     conn = get_db_connection()
-    categories = conn.execute("SELECT * FROM categories c JOIN users u ON c.user_id = u.id WHERE u.id = ?", (user_id,))
-    # conn.close()
-    return categories.fetchall()
+    categories = conn.execute("SELECT * FROM categories c JOIN users u ON c.user_id = u.id WHERE u.id = ?", (user_id,)).fetchall()
+    close_connection(conn)
+    return categories
 
-def get_category_id_by_name(user_id, category_name:str):
+def get_category_id_by_name(user_id, category_name: str):
     conn = get_db_connection()
     category_id = conn.execute("SELECT c.id FROM categories c JOIN users u ON c.user_id = u.id WHERE u.id = ? AND c.name = ?", (user_id, category_name)).fetchone()
-    conn.close()
-    return category_id['id']
+    close_connection(conn)
+    return category_id['id'] if category_id else None
 
-def get_category_name_by_id(user_id, category_id:str):
+def get_category_name_by_id(user_id, category_id: str):
     conn = get_db_connection()
     category = conn.execute("SELECT c.name FROM categories c JOIN users u ON c.user_id = u.id WHERE u.id = ? AND c.id = ?", (user_id, category_id)).fetchone()
-    conn.close()
-    return category['name']
+    close_connection(conn)
+    return category['name'] if category else None
 
 def save_user_budget(user_id, total_budget):
     conn = get_db_connection()
-
-    # Update the user's budget
     conn.execute("UPDATE users SET budget = ? WHERE ID = ?", (total_budget, user_id))
-    conn.commit()
-    conn.close()
+    close_connection(conn)
 
 def get_user_budget(user_id):
     conn = get_db_connection()
     budget_query = "SELECT budget FROM users WHERE ID = ?"
     budget_result = conn.execute(budget_query, (user_id,)).fetchone()
-    total_budget = budget_result[0] if budget_result else 0.0
-
-    conn.close()
-
-    return total_budget
+    close_connection(conn)
+    return budget_result[0] if budget_result else 0.0
 
 if __name__ == "__main__":
     init_tables()
-    #init_test_data()
