@@ -43,6 +43,12 @@ def find_events(user_id):
 
 # Returns boolean depending on whether the transaction was able to be added to the db
 def add_transaction(user_id, title:str, description:str, category_name:str, amount:float, recurring:bool, expense:bool, input_date) -> bool:
+    try:
+        # Validate date format
+        datetime.strptime(input_date, "%Y-%m-%d")
+    except ValueError:
+        return False  # Invalid date format
+    
     flag = None
     category_id = get_category_id_by_name(user_id, category_name)
     if(category_id is None):

@@ -166,5 +166,105 @@ class FlaskAppTests(unittest.TestCase):
             with client.session_transaction() as sess:
                 self.assertIn('Event added successfully!', sess['_flashes'][0][1])
 
+    @patch('db.get_user_budget')
+    def test_budget_get(self, mock_get_budget):
+        mock_get_budget.return_value = 5000
+        with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess['user_id'] = 1
+            response = client.get('/budget/')
+            self.assertEqual(response.status_code, 200)
+            self.assertIn('5000', response.data.decode())
+
+    @patch('db.get_user_budget')
+    @patch('db.save_user_budget')
+    def test_budget_post(self, mock_save_budget, mock_get_budget):
+        mock_get_budget.return_value = 5000
+        mock_save_budget.return_value = True
+        with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess['user_id'] = 1
+            response = client.post('/budget/', data={'total-budget': '6000'})
+            self.assertEqual(response.status_code, 302)
+            with client.session_transaction() as sess:
+                self.assertIn('Your budget has been updated!', sess['_flashes'][0][1])
+
+    @patch('db.get_categories_of_user')
+    @patch('db.get_transactions_of_user')
+    @patch('db.get_category_name_by_id')
+    @patch('suggestions.get_budget_tips')
+    def test_tips_logged_in(self, mock_get_tips, mock_get_cat_name, mock_get_txns, mock_get_cats):
+        mock_get_cats.return_value = [{'ID': 1, 'name': 'paycheck'}, {'ID': 2, 'name': 'rent'}]
+        mock_get_txns.return_value = [
+            {'category_id': 1, 'amount': '2000', 'title': 'Paycheck', 'expense': False},
+            {'category_id': 2, 'amount': '800', 'title': 'Rent', 'expense': True}
+        ]
+        mock_get_cat_name.side_effect = lambda uid, cid: {1: 'paycheck', 2: 'rent'}[cid]
+        mock_get_tips.return_value = "You're doing great!"
+        with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess['user_id'] = 1
+            response = client.get('/tips/')
+            self.assertEqual(response.status_code, 200)
+            self.assertIn("You're doing great!", response.data.decode())
+
+    @patch('db.get_transactions_of_user')
+    @patch('db.get_user_budget')
+    @patch('db_interface.find_events')
+    def test_dashboard_logged_in(self, mock_find_events, mock_get_budget, mock_get_txns):
+        mock_get_txns.return_value = []
+        mock_find_events.return_value = []
+        mock_get_budget.return_value = 5000
+        with patch('graph.generate_graphs') as mock_graphs:
+            mock_graphs.return_value = ("<div>Pie</div>", "<div>Bar</div>")
+            with app.test_client() as client:
+                with client.session_transaction() as sess:
+                    sess['user_id'] = 1
+                    sess['username'] = 'testuser'
+                response = client.get('/dashboard/')
+                self.assertEqual(response.status_code, 200)
+                self.assertIn("Pie", response.data.decode())
+                self.assertIn("Bar", response.data.decode())
+
+    @patch('db_interface.add_transaction')
+    @patch('db_interface.add_category')
+    def test_add_event_with_new_category(self, mock_add_category, mock_add_transaction):
+        mock_add_category.return_value = True
+        mock_add_transaction.return_value = True
+        with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess['user_id'] = 1
+            response = client.post('/add_event/', data={
+                'name': 'Test',
+                'description': 'desc',
+                'amount': '100',
+                'category': '__new__',
+                'newCategory': 'newcat',
+                'type': 'expense',
+                'date': '2025-05-05'
+            })
+            self.assertEqual(response.status_code, 302)
+            with client.session_transaction() as sess:
+                self.assertIn("Event added successfully!", sess['_flashes'][0][1])
+
+    @patch('db_interface.add_transaction')
+    def test_add_recurring_event_monthly(self, mock_add_transaction):
+        mock_add_transaction.return_value = True
+        with app.test_client() as client:
+            with client.session_transaction() as sess:
+                sess['user_id'] = 1
+            response = client.post('/add_event/', data={
+                'name': 'Rent',
+                'description': 'Monthly rent',
+                'amount': '1000',
+                'category': 'rent',
+                'type': 'expense',
+                'date': '2025-05-01',
+                'recurring': 'on',
+                'recurrence_type': 'monthly'
+            })
+            self.assertEqual(response.status_code, 302)
+            self.assertTrue(mock_add_transaction.call_count > 1)
+
 if __name__ == '__main__':
     unittest.main()

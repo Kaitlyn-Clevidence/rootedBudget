@@ -1,22 +1,18 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, Response
+import os
+import markdown
+from datetime import datetime, timedelta
+from collections import namedtuple
+from calendar import monthrange
+
 import my_auth
 import db_interface
 import db
 import suggestions
-import os
-import markdown
-
-#from werkzeug.security import check_password_hash, generate_password_hash
-#from functools import wraps
-from datetime import datetime, timedelta
-from collections import namedtuple
-#import numpy as np
 import graph
-from calendar import monthrange
-#from http import HTTPStatus
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SECRET_KEY", "supersecretkey")  # Replace "dev" with something more secure in prod
+app.secret_key = os.environ.get("SECRET_KEY", "supersecretkey")
 
 @app.route("/")
 def landing():
