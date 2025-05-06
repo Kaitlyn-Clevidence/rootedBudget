@@ -76,7 +76,7 @@ class TestFinanceTracker(unittest.TestCase):
     @patch('db_interface.db.create_category')
     def test_add_category_success(self, mock_create_category):
         mock_create_category.return_value = None
-        result = db_interface.add_category(self.USER_ID, "Food")
+        result = db_interface.add_category(self.USER_ID, "Groceries")
         self.assertTrue(result)
         mock_create_category.assert_called_once_with(self.USER_ID, "Groceries")
 
