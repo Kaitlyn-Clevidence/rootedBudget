@@ -7,7 +7,6 @@ import graph
 class TestGenerateGraphs(unittest.TestCase):
 
     def _parse_html_and_check_div(self, html):
-        """Helper function to parse HTML and check for <div> tags."""
         soup = BeautifulSoup(html, "html.parser")
         divs = soup.find_all("div")
         self.assertGreater(len(divs), 0)
@@ -15,11 +14,9 @@ class TestGenerateGraphs(unittest.TestCase):
     @patch('graph.db.get_category_name_by_id')
     @patch('graph.datetime')
     def test_generate_graphs(self, mock_datetime, mock_get_category_name_by_id):
-        # Force current date to April 2025
         mock_datetime.now.return_value = datetime(2025, 4, 20)
         mock_datetime.strptime = datetime.strptime
 
-        # Sample transaction data
         transaction_list = [
             {
                 'created_at': '2025-04-10',
@@ -56,7 +53,6 @@ class TestGenerateGraphs(unittest.TestCase):
 
         pie_html, bar_html = graph.generate_graphs(transaction_list, base_budget)
 
-        # Validate HTML via BeautifulSoup
         self._parse_html_and_check_div(pie_html)
         self._parse_html_and_check_div(bar_html)
 

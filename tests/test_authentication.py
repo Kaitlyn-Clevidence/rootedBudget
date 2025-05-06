@@ -1,8 +1,6 @@
-#lots of integration between authentication and database here
-
 import unittest
 from unittest.mock import patch, MagicMock, ANY, call
-import my_auth as my_auth  # Assuming the functions are defined in my_auth.py
+import my_auth as my_auth
 
 class MyAuthTests(unittest.TestCase):
     
@@ -20,8 +18,8 @@ class MyAuthTests(unittest.TestCase):
         mock_db_create_user.assert_called_once_with("testuser", "test@example.com", ANY)
         mock_init_categories.assert_called_once_with(1, ["rent", "groceries", "spending", "paycheck", "savings"])
 
-    @patch('db.db_create_user')  # Patch the actual DB function
-    @patch('db.get_user')     # If get_user is also used inside create_user
+    @patch('db.db_create_user')
+    @patch('db.get_user')
     def test_create_user_failure(self, mock_get_user, mock_db_create_user):
         mock_db_create_user.side_effect = Exception("Database error")
         result = my_auth.create_user("testuser", "test@example.com", "password123")

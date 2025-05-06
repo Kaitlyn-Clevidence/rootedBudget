@@ -23,7 +23,7 @@ class TestFinanceTracker(unittest.TestCase):
     @patch('db_interface.get_category_id_by_name')
     def test_add_transaction_success(self, mock_get_category_id_by_name, mock_create_transaction):
         mock_get_category_id_by_name.return_value = self.CATEGORY_ID
-        mock_create_transaction.return_value = None  # Simulate success
+        mock_create_transaction.return_value = None
 
         result = db_interface.add_transaction(self.USER_ID, **self.TRANSACTION_DATA)
         self.assertTrue(result)

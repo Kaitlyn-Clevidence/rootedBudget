@@ -1,14 +1,6 @@
 import unittest
 from unittest.mock import patch
-from suggestions import analyze_spending, get_budget_tips  # replace with your actual module name
-
-
-#category_recommendations = {
-#    "rent": 0.30,
-#    "food": 0.15,
-#    "spending": 0.10,
-#    "savings": 0.20,
-#}
+from suggestions import analyze_spending, get_budget_tips
 
 class TestBudgetingFunctions(unittest.TestCase):
     def test_analyze_spending_good_budget(self):

@@ -1,8 +1,23 @@
-db.py                    76     50    34%   48-50, 54-55, 58-64, 67-70, 73-77, 80-84, 87-90, 93-96, 99-102, 105-108, 111-113, 116-120, 123
-db_interface.py          92     46    50%   7-21, 86-130
-flaskApp.py             202     29    86%   30-31, 94, 111-112, 148, 163, 177, 184, 196, 213, 236, 248-249, 251-252, 259-260, 262-270, 284, 291
-graph.py                 60      0   100%
-my_auth.py               33      2    94%   28-29
-suggestions.py           24      0   100%
+db.py                      76     50    34%
+    not tested init_tables or some of the database interractions due to not wanting to mess up the existing database 
+db_interface.py            57     12    79%
+flaskApp.py               202     29    86%
+graph.py                   60      0   100%
+my_auth.py                 33      2    94%
+suggestions.py             24      0   100%
 
-avg: 77.333%
+avg coverage: 82.1%
+
+Admittedly, this project was not coded with testing in mind, as my partner and I put it together in
+40 hours for the ACM Hackathon. The goal was functionality, not testability. However, I feel I have
+put together some fairly comprehensive tests to cover the program. Much of the tests were integrations
+between the database and the other aspects of the program, such as authentication or money management tips. 
+Some of these tests were:
+    1. def test_create_user_success(self, mock_get_user, mock_db_create_user, mock_init_categories)
+    2. def test_login_user_success(self, mock_login)
+    3. def test_create_user_success(self, mock_get_user, mock_db_create_user)
+    4. def test_landing_page_logged_in(self, mock_get_transactions, mock_get_categories, mock_find_events)
+    5. def test_add_event(self, mock_add_transaction)
+    6. def test_tips_logged_in(self, mock_get_tips, mock_get_cat_name, mock_get_txns, mock_get_cats)
+    7. def test_dashboard_logged_in(self, mock_find_events, mock_get_budget, mock_get_txns)
+Note: these are not all of the integration tests, but a few examples of the tests used in this program. 

@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock, ANY
 from datetime import datetime
-import my_auth  # Assuming the functions are defined in my_auth.py
+import my_auth 
 import db
 import db_interface
 
@@ -9,38 +9,23 @@ import sqlite3
     
 class MyAuthTests(unittest.TestCase):
     def setUp(self):
-        # Use an in-memory SQLite database for isolated testing
         self.conn = sqlite3.connect(":memory:")
         self.conn.row_factory = sqlite3.Row
-
-        # Patch db.get_db_connection to always return the in-memory connection
         db.get_db_connection = lambda: self.conn
-
-        # Initialize the tables on the in-memory database
         db.init_tables()
 
     def tearDown(self):
         self.conn.close()
+
     def test_create_user_success(self):
         result = db.db_create_user("testuser", "test@example.com", "hashed_pw")
         self.assertIsNotNone(result)
 
-        # Verify user exists
         cur = self.conn.cursor()
         user = cur.execute("SELECT * FROM users WHERE username = ?", ("testuser",)).fetchone()
         self.assertIsNotNone(user)
         self.assertEqual(user["email"], "test@example.com")
         self.assertEqual(user["password_hash"], "hashed_pw")
-
-    #def test_create_user_duplicate_username_or_email(self):
-    #    db.init_tables()  # Re-init tables since patching overrides connection
-    #    db.db_create_user("testuser", "test@example.com", "hashed_pw")
-
-    #    with self.assertRaises(sqlite3.IntegrityError):
-    #        db.db_create_user("testuser", "another@example.com", "hashed_pw")  # Duplicate username
-
-    #    with self.assertRaises(sqlite3.IntegrityError):
-    #        db.db_create_user("anotheruser", "test@example.com", "hashed_pw")  # Duplicate email
 
     @patch('my_auth.create_user')
     @patch('db.get_user')
@@ -134,15 +119,14 @@ class MyAuthTests(unittest.TestCase):
     def test_save_user_budget_success(self, mock_save_budget):
         mock_save_budget.return_value = True
         result = db.save_user_budget(1, 1000.0)
-        self.assertTrue(result)  # Ensures that the budget is saved correctly
+        self.assertTrue(result) 
         mock_save_budget.assert_called_once_with(1, 1000.0)
 
     @patch('db.get_user')
     def test_get_user_invalid_identifier(self, mock_get_user):
-        # Simulate invalid username
         mock_get_user.return_value = None
         result = db.get_user("nonexistentuser")
-        self.assertIsNone(result)  # User should not be found
+        self.assertIsNone(result)
         mock_get_user.assert_called_once_with("nonexistentuser")
     
     @patch('db.get_transactions_of_user')
@@ -152,7 +136,7 @@ class MyAuthTests(unittest.TestCase):
             {"title": "Salary", "amount": 3000.0, "category_id": 2, "expense": False}
         ]
         result = db.get_transactions_of_user(1)
-        self.assertEqual(len(result), 2)  # Check multiple transactions
+        self.assertEqual(len(result), 2) 
         self.assertEqual(result[0]['title'], "Lunch")
         self.assertEqual(result[1]['title'], "Salary")
 
@@ -163,14 +147,9 @@ class MyAuthTests(unittest.TestCase):
             {"name": "rent", "user_id": 1}
         ]
         result = db.get_categories_of_user(1)
-        self.assertEqual(len(result), 2)  # Check multiple categories
+        self.assertEqual(len(result), 2)
         self.assertEqual(result[0]['name'], "food")
         self.assertEqual(result[1]['name'], "rent")
-    
-    #get user budget
-    #get user budget but its 0
-    #get category name by id
-    #get category id by name
-    #get categories of user
+
 if __name__ == '__main__':
     unittest.main()

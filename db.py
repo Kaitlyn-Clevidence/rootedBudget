@@ -119,5 +119,5 @@ def get_user_budget(user_id):
     close_connection(conn)
     return budget_result[0] if budget_result else 0.0
 
-if __name__ == "__main__":
-    init_tables()
+#if __name__ == "__main__":
+#    init_tables()

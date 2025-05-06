@@ -8,27 +8,23 @@ class FlaskAppTests(unittest.TestCase):
     def setUp(self):
         self.app = app
         self.client = self.app.test_client()
-
-        # Push the app context so g & teardown work
         self.app_context = self.app.app_context()
         self.app_context.push()
 
     def tearDown(self):
-        # Remove app context to clean up
         self.app_context.pop()
 
     @patch('db_interface.find_events')
     @patch('db.get_categories_of_user')
     @patch('db.get_transactions_of_user')
     def test_landing_page_logged_in(self, mock_get_transactions, mock_get_categories, mock_find_events):
-        # Mock return values for the patched methods
         mock_get_transactions.return_value = []
         mock_get_categories.return_value = []
         mock_find_events.return_value = []
 
         with app.test_client() as client:
             with client.session_transaction() as sess:
-                sess['user_id'] = 1  # Set session user_id
+                sess['user_id'] = 1
             response = client.get('/')
             self.assertEqual(response.status_code, 302)
 
